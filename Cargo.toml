@@ -1,0 +1,23 @@
+[package]
+name = "cargo-dimension"
+version = "1.0.0"
+authors = ["Adam Smith <adam@dimensionlabs.io>"]
+edition = "2018"
+description = "A command line tool for creating a Wasm smart contract and tests for use on the Dimension network."
+documentation = "https://docs.rs/cargo-dimension"
+readme = "README.md"
+homepage = "https://dimensionchain.org"
+repository = "https://github.com/dimension-labs/cargo-dimension"
+license = "Apache-2.0"
+include = ["src/*.rs", "Cargo.lock", "Cargo.toml", "resources/*"]
+
+[dependencies]
+clap = { version = "3", features = ["cargo"] }
+colour = "0.6"
+once_cell = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+reqwest = { version = "0.11.10", features = ["blocking"] }
+serde_json = "1"
+tempfile = "3"

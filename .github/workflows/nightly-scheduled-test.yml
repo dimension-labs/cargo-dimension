@@ -1,0 +1,62 @@
+---
+name: nightly-scheduled-test
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # runs every day at midnight
+    - cron: "0 0 * * *"
+
+jobs:
+  nightly-cargo-test:
+    strategy:
+      matrix:
+        branch: [main, dev]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: Get nightly toolchain from file
+        id: nightly-toolchain
+        run: echo "::set-output name=version::$(cat resources/rust-toolchain.in)"
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ steps.nightly-toolchain.outputs.version }}
+          profile: minimal
+          components: rustfmt, clippy
+          target: wasm32-unknown-unknown
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        env:
+          BRANCH_SELECTOR: ${{ matrix.branch }}
+        with:
+          command: --locked
+          args: test
+
+      - name: Update
+        uses: actions-rs/cargo@v1
+        with:
+          command: update
+
+      - name: Build Updated
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
+      - name: Slack Notification
+        uses: ravsamhq/notify-slack-action@v1
+        if: always()
+        with:
+          status: ${{ job.status }}
+          notification_title: "*{repo}* ${{ matrix.branch }}"
+          message_format: "{emoji} *{workflow}:* *{status_message}* in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>"
+          footer: "<{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
